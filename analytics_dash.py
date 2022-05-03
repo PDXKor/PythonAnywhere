@@ -27,14 +27,8 @@ current_ratio_text = "A liquidity ratio that measures a company’s ability to p
 
 short_ratio_text = "The short ratio is a widely-used tool by short selling hedge funds and other portfolio managers in the stock market. The short ratio indicates the number of shares that investors sell short over the average daily volume of the stock on the basis of 1 or 3 months."
 
-
-def format(x):
-    return "${:,.0f}".format(x/1000000)
-
-
 fig = None
 a = None
-
 
 initial_ticker_val = 'AAPL'
 a = yfinance.Ticker(initial_ticker_val)
@@ -288,16 +282,24 @@ def update_output(tickerInput, loading_text_clicks, getStockDataButton):
                          'border': '1px solid #E8E8E8'}
 
     #build tables
-
+    
     # balance sheet tables
-    df_bs = aa.balance_sheet.transpose()
+    df_bs = aa.balance_sheet
+    
+    print(df_bs.columns)
+    df_bs = df_bs[df_bs.columns[::-1]]
+    print(df_bs.columns)
+    
+    df_bs = df_bs.transpose()
+  
+    #print(df_bs.head)
     df_bs.index = df_bs.index.strftime('%Y-%m-%d')
     df_bs = df_bs.transpose()
     df_bs = df_bs.drop(index=['Other Stockholder Equity',
                        'Net Receivables', 'Treasury Stock', 'Inventory'])
 
     for col in df_bs.columns:
-        df_bs[col] = df_bs[col].apply(format)
+        df_bs[col] = df_bs[col].apply(lambda x: "{:,.0f}".format(x/1000000))
 
     # assets table
     df_bs_assets = df_bs.loc[['Total Assets', 'Other Assets', 'Cash', 'Total Current Assets',
@@ -311,16 +313,50 @@ def update_output(tickerInput, loading_text_clicks, getStockDataButton):
     # liabilities table
     df_bs_liab = df_bs.loc[['Total Liab', 'Other Current Liab',
                             'Total Current Liabilities', 'Accounts Payable', 'Short Long Term Debt']]
+    
+    
+    df_bs_chart = df_bs.loc[['Cash','Total Current Liabilities','Total Liab','Total Current Assets']]
+    df_bs_chart = df_bs_chart.transpose()
+    #df_bs_chart = df_bs_chart
+    
+    bs_fig_cash = px.bar(df_bs_chart,
+                    x=df_bs_chart.index,
+                    y=df_bs_chart['Cash'],
+                    width=450, height=375,
+                    template='none')
+                    
+    bs_fig_curr_liab = px.bar(df_bs_chart,
+                    x=df_bs_chart.index,
+                    y=df_bs_chart['Total Current Liabilities'],
+                    width=450, height=375,
+                    template='none',
+                    color_discrete_sequence=["darkslategray"])
+    
+    bs_fig_tliab = px.bar(df_bs_chart,
+                    x=df_bs_chart.index,
+                    y=df_bs_chart['Total Liab'],
+                    width=450, height=375,
+                    template='none',
+                    color_discrete_sequence=["crimson"])
+    
+    bs_fig_asst = px.bar(df_bs_chart,
+                    x=df_bs_chart.index,
+                    y=df_bs_chart['Total Current Assets'],
+                    width=450, height=375,
+                    template='none',
+                    color_discrete_sequence=["green"])
+        
+           
+    print(df_bs_chart)
+    
     df_bs_liab.reset_index(inplace=True)
-
     df_bs.reset_index(inplace=True)
-
+    
+    
     balance_sheet_table_div = html.Div([
-        #html.Br(),
-        html.Br(),
         html.Br(),
         html.H3(['Balance Sheet']),
-        html.Div([
+          html.Div([   
             html.H4(['Assets']),
             dash.dash_table.DataTable(
                 columns=[{'name': i, 'id': i} for i in df_bs.columns],
@@ -340,18 +376,16 @@ def update_output(tickerInput, loading_text_clicks, getStockDataButton):
                 columns=[{'name': i, 'id': i} for i in df_bs.columns],
                 data=df_bs_liab.to_dict('records'),
                 style_header=dict(backgroundColor="paleturquoise"),
-            )
-            # html.Br(),
-            # html.H4(['Full Table']),
-            # dash.dash_table.DataTable(
-            # columns = [{'name': i, 'id': i} for i in df_bs.columns],
-            # data = df_bs.to_dict('records'))
-
+            ),            
+            html.Div([
+            dcc.Graph(figure=bs_fig_cash,style={'float':'left'}),
+            dcc.Graph(figure=bs_fig_curr_liab,style={'float':'left'}),
+            dcc.Graph(figure=bs_fig_tliab,style={'float':'left'}),
+            dcc.Graph(figure=bs_fig_asst,style={'float':'left'}),
+            ],style={'display':'inline-block'}),
         ],style={'margin':'20px 0px 0px 30px'}
         )
     ]),
-
-    #style={'margin-left':'20px'}
 
     # sometimes the dict returned does not have the data,
     # so you need to check if the key exists in the dict
