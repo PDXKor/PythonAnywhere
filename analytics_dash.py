@@ -18,6 +18,15 @@ from pathlib import Path
     Biggest losers per day and how are they doing now - utilize the python now batch job feature.
     PEs over time - start in Jupyter but then integrate into web app
     Split pages into individual modules    
+    
+    sp500
+        How much cash was added to or left the sp500
+        The distribution of % changes for the week
+    
+    Macro
+        Fed funds data
+        Unemployment
+        
     '''
 
 # for deployment, pass app.server (which is the actual flask app) to WSGI etc
@@ -65,25 +74,25 @@ def display_page(pathname):
         return etf_analysis_layout
     if pathname == '/sp500_analysis':
         return sp500_analysis_layout
+    if pathname == '/sp500_distributions':
+        return sp500_distribution_layout
     else:
         return index_page
 
 
-sp500_analysis_layout = html.Div([
+sp500_distribution_layout = html.Div([
     
     # Navbar Content
     dbc.NavbarSimple(
         children=[
-            dbc.NavItem(dbc.NavLink("SP500 Summary Table", href="#")),
+            dbc.NavItem(dbc.NavLink("SP500 Distributions", href="#")),
             dbc.DropdownMenu(
                 children=[
                     dbc.DropdownMenuItem("More pages", header=True),
-                    dbc.DropdownMenuItem(
-                        "ETF & Macro Analysis", href="/etf_analysis"),
-                    #dbc.DropdownMenuItem("Analysis in Jupyter", href="/analysis_in_jupyter"),
-                    dbc.DropdownMenuItem(
-                        "Individual Equity Data", href="/index"),
-
+                    dbc.DropdownMenuItem("ETF & Macro Analysis", href="/etf_analysis"),
+                    #dbc.DropdownMenuItem("SP500 Distributions", href="/sp500_distributions"),
+                    dbc.DropdownMenuItem("SP500 Summary Table", href="/sp500_analysis"),
+                    dbc.DropdownMenuItem("Individual Equity Data", href="/index"),
                 ],
                 nav=True,
                 in_navbar=True,
@@ -99,36 +108,32 @@ sp500_analysis_layout = html.Div([
     html.Div([
 
         dcc.Interval(
-            id="sp500_load_interval",
+            id="sp500_dist_load_interval",
             n_intervals=0,
             max_intervals=0,  # <-- only run once
             interval=1
         ),
         html.Br(),
-        html.Div([], id='sp500-summary-table-container',
+        html.Div([], id='sp500-distirbution-container',
                  style={'width': '70%',
                         'margin-left':'20px'})
 
     ], id='sp500-page-content',)
 
 ])
-
-
 @app.callback(
-    Output("sp500-summary-table-container", "children"),
-    Input(component_id="sp500_load_interval",
+    Output("sp500-distirbution-container", "children"),
+    Input(component_id="sp500_dist_load_interval",
           component_property="n_intervals"),
 )
-def update_etf_layout(n_intervals: int):
-
+def update_sp_dist_layout(n_intervals: int):
+    
     tmp_lst = []
     for t in datao['data'].keys():
         #print(t,datao['data'][t]['historical'])
         lst_cls = datao['data'][t]['historical']['Close']
         if not lst_cls.empty:
-
-            print(datao['data'][t]['info'])
-
+            #print(datao['data'][t]['info'])
             trl_pe = 'N/A'
             fwd_pe = 'N/A'
             div_rt = 'N/A'
@@ -170,9 +175,160 @@ def update_etf_layout(n_intervals: int):
                             'Dividend Yield': div_rt
                             })
 
-    sp500_summary_df = pd.DataFrame.from_dict(tmp_lst)
-    print(sp500_summary_df)
+    sp500_summary_df = pd.DataFrame.from_dict(tmp_lst)  
+    
+    seven_day_chng_fig = px.histogram(sp500_summary_df, 
+                       x='7 Day Change %',
+                       marginal="box",
+                       nbins=60)
+    
+    seven_day_chng_fig.update_yaxes(title_text=None)
+    
+    thirty_day_chng_fig = px.histogram(sp500_summary_df, 
+                       x='30 Day Change %',
+                       marginal="box",
+                       nbins=60)
+    
+    thirty_day_chng_fig.update_yaxes(title_text=None)
+    
+    trailing_pe_fig = px.histogram(sp500_summary_df, 
+                       x='Trailing PE',
+                       marginal="box",
+                       nbins=60)
+    
+    trailing_pe_fig.update_yaxes(title_text=None)
+    
+    forward_pe_fig = px.histogram(sp500_summary_df, 
+                       x='Forward PE',
+                       marginal="box",
+                       nbins=60)
+    
+    forward_pe_fig.update_yaxes(title_text=None)
+    
+    chart = html.Div([dcc.Graph(id='seven_day_chng_dist',figure=seven_day_chng_fig),
+                      dcc.Graph(id='thirty_day_chng_dist',figure=thirty_day_chng_fig),
+                      dcc.Graph(id='trailing_pe_dist',figure=trailing_pe_fig),
+                      dcc.Graph(id='forward_pe_dist',figure=forward_pe_fig),
+                      ])
+    
+    return chart
+                  
+        
+    
+    # html.Div([
+    #          #html.P(['Temp']),
+    #          dcc.Graph(id='xlf_daily_close',
+    #                    figure=fig_store['XLF']['daily_close'],
+    #                    style={'height': 300}),
+    #          dcc.Graph(id='xlf_holdings',
+    #                    figure=fig_store['XLF']['etf_holdings'],
+    #                    style={'height': 300}),
+    #          ], style={'width': '47%',
+    #                    'display': 'inline-block'})
 
+    #                    ])
+                      
+
+
+
+
+sp500_analysis_layout = html.Div([    
+    # Navbar Content
+    dbc.NavbarSimple(
+        children=[
+            dbc.NavItem(dbc.NavLink("SP500 Summary Table", href="#")),
+            dbc.DropdownMenu(
+                children=[
+                    dbc.DropdownMenuItem("More pages", header=True),
+                    dbc.DropdownMenuItem("ETF & Macro Analysis", href="/etf_analysis"),
+                    dbc.DropdownMenuItem("SP500 Distributions", href="/sp500_distributions"),
+                    #dbc.DropdownMenuItem("SP500 Summary Table", href="/sp500_analysis"),
+                    dbc.DropdownMenuItem("Individual Equity Data", href="/index"),
+                ],
+                nav=True,
+                in_navbar=True,
+                label="More",
+            ),
+        ],
+        brand="Equity Trends",
+        brand_href="#",
+        color="primary",
+        dark=True),
+
+    # Page Content
+    html.Div([
+
+        dcc.Interval(
+            id="sp500_load_interval",
+            n_intervals=0,
+            max_intervals=0,  # <-- only run once
+            interval=1
+        ),
+        html.Br(),
+        html.Div([], id='sp500-summary-table-container',
+                 style={'width': '70%',
+                        'margin-left':'20px'})
+
+    ], id='sp500-page-content',)
+
+])
+
+
+@app.callback(
+    Output("sp500-summary-table-container", "children"),
+    Input(component_id="sp500_load_interval",
+          component_property="n_intervals"),
+)
+def update_sp_summary_tbl_layout(n_intervals: int):
+
+    tmp_lst = []
+    for t in datao['data'].keys():
+        #print(t,datao['data'][t]['historical'])
+        lst_cls = datao['data'][t]['historical']['Close']
+        if not lst_cls.empty:
+            #print(datao['data'][t]['info'])
+            trl_pe = 'N/A'
+            fwd_pe = 'N/A'
+            div_rt = 'N/A'
+
+            if 'trailingPE' in datao['data'][t]['info']:
+                trl_pe = datao['data'][t]['info']['trailingPE']
+                if isinstance(trl_pe, float):
+                    trl_pe = np.round(trl_pe, 2)
+
+            if 'forwardPE' in datao['data'][t]['info']:
+                fwd_pe = datao['data'][t]['info']['forwardPE']
+                if isinstance(fwd_pe, float):
+                    fwd_pe = np.round(fwd_pe, 2)
+
+            if 'dividendRate' in datao['data'][t]['info']:
+                if isinstance(datao['data'][t]['info']['dividendRate'], float):
+                    div_rt = np.round(
+                        datao['data'][t]['info']['dividendRate']/lst_cls[-1], 3)
+
+            mnth_chg = np.round(lst_cls[-1]-lst_cls[-30], 2)
+            mnth_chg_pct = np.round((lst_cls[-1]-lst_cls[-30])/lst_cls[-30], 2)
+
+            wk_chg = np.round(lst_cls[-1]-lst_cls[-7], 2)
+            wk_chg_pct = np.round((lst_cls[-1]-lst_cls[-7])/lst_cls[-7], 2)
+
+            tmp_lst.append({'Stock': t,
+                            'Last Close': np.round(lst_cls[-1], 2),
+                            '52 Week High': np.round(lst_cls.max()),
+                            '52 Week Avg': np.round(lst_cls.mean()),
+                            '52 Week Sigma': np.round(lst_cls.std()),
+                            '7 Day Value': np.round(lst_cls[-7], 2),
+                            '7 Day Change': wk_chg,
+                            '7 Day Change %': wk_chg_pct,
+                            '30 Day Value': np.round(lst_cls[-30], 2),
+                            '30 Day Change': mnth_chg,
+                            '30 Day Change %': mnth_chg_pct,
+                            'Trailing PE': trl_pe,
+                            'Forward PE': fwd_pe,
+                            'Dividend Yield': div_rt
+                            })
+
+    sp500_summary_df = pd.DataFrame.from_dict(tmp_lst)    
     summary_tbl = [html.H3('SP500 Summary Table'),
                    dash.dash_table.DataTable(
         columns=[{'name': i, 'id': i} for i in sp500_summary_df.columns],
@@ -194,12 +350,10 @@ etf_analysis_layout = html.Div([
             dbc.DropdownMenu(
                 children=[
                     dbc.DropdownMenuItem("More pages", header=True),
-                    #dbc.DropdownMenuItem("Analysis in Jupyter", href="/analysis_in_jupyter"),
-                    dbc.DropdownMenuItem(
-                        "Individual Equity Data", href="/index"),
-                    dbc.DropdownMenuItem(
-                        "SP500 Analysis", href="/sp500_analysis"),
-
+                    #dbc.DropdownMenuItem("ETF & Macro Analysis", href="/etf_analysis"),
+                    dbc.DropdownMenuItem("SP500 Distributions", href="/sp500_distributions"),
+                    dbc.DropdownMenuItem("SP500 Summary Table", href="/sp500_analysis"),
+                    dbc.DropdownMenuItem("Individual Equity Data", href="/index"),
                 ],
                 nav=True,
                 in_navbar=True,
@@ -374,11 +528,11 @@ index_page = html.Div(id='index-content', children=[
             dbc.DropdownMenu(
                 children=[
                     dbc.DropdownMenuItem("More pages", header=True),
-                    #dbc.DropdownMenuItem("Analysis in Jupyter", href="/analysis_in_jupyter"),
-                    dbc.DropdownMenuItem(
-                        "ETF & Macro Analysis", href="/etf_analysis"),
-                    dbc.DropdownMenuItem(
-                        "SP500 Analysis", href="/sp500_analysis"),
+                    dbc.DropdownMenuItem("ETF & Macro Analysis", href="/etf_analysis"),
+                    dbc.DropdownMenuItem("SP500 Distributions", href="/sp500_distributions"),
+                    dbc.DropdownMenuItem("SP500 Summary Table", href="/sp500_analysis"),
+                    #dbc.DropdownMenuItem("Individual Equity Data", href="/index"),
+
                 ],
                 nav=True,
                 in_navbar=True,
