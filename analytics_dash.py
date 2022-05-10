@@ -115,7 +115,7 @@ sp500_distribution_layout = html.Div([
         ),
         html.Br(),
         html.Div([], id='sp500-distirbution-container',
-                 style={'width': '70%',
+                 style={'width': '98%',
                         'margin-left':'20px'})
 
     ], id='sp500-page-content',)
@@ -134,9 +134,9 @@ def update_sp_dist_layout(n_intervals: int):
         lst_cls = datao['data'][t]['historical']['Close']
         if not lst_cls.empty:
             #print(datao['data'][t]['info'])
-            trl_pe = 'N/A'
-            fwd_pe = 'N/A'
-            div_rt = 'N/A'
+            trl_pe = 0
+            fwd_pe = 0
+            div_rt = 0
 
             if 'trailingPE' in datao['data'][t]['info']:
                 trl_pe = datao['data'][t]['info']['trailingPE']
@@ -177,26 +177,72 @@ def update_sp_dist_layout(n_intervals: int):
 
     sp500_summary_df = pd.DataFrame.from_dict(tmp_lst)  
     
-    seven_day_chng_fig = px.histogram(sp500_summary_df, 
-                       x='7 Day Change %',
-                       marginal="box",
-                       nbins=60)
+    #drop rows w/o values
+    sp500_summary_df = sp500_summary_df.drop(sp500_summary_df[sp500_summary_df['Trailing PE'] == 'N/A'].index)
+    sp500_summary_df = sp500_summary_df.drop(sp500_summary_df[sp500_summary_df['Forward PE'] == 'N/A'].index)
     
+    #drop outliers
+    sp500_summary_df = sp500_summary_df.drop(sp500_summary_df[sp500_summary_df['Trailing PE'] > 300].index)
+    sp500_summary_df = sp500_summary_df.drop(sp500_summary_df[sp500_summary_df['Forward PE'] > 300].index)
+    
+    # Seven Day Change % Distribution
+    seven_day_chng_fig = px.histogram(sp500_summary_df, 
+                                      x='7 Day Change %',
+                                      marginal="box",
+                                      nbins=60)     
     seven_day_chng_fig.update_yaxes(title_text=None)
+        
+    # Seven Day Change % Distribution vs Sigma 
+    seven_day_chng_v_thirty = px.scatter(sp500_summary_df, 
+                                         x='7 Day Change %',
+                                         y='30 Day Change %',
+                                         hover_name="Stock")
+    
+    
+    #seven_day_chng_v_thirty.update_yaxes(title_text=None)
+    seven_day_chng_v_thirty.update_yaxes(title_standoff =100,
+                                         ticks="inside",
+                                         tickfont={'size':8},
+                                         dtick=.2)
+    
     
     thirty_day_chng_fig = px.histogram(sp500_summary_df, 
                        x='30 Day Change %',
                        marginal="box",
+                       color_discrete_sequence=['indianred'], # color of histogram bars
                        nbins=60)
     
     thirty_day_chng_fig.update_yaxes(title_text=None)
     
+    # Trailing PE vs Forward PE
+    trl_pe_v_fwd_pe = px.scatter(sp500_summary_df, 
+                                 x='Trailing PE',
+                                 y='Forward PE',
+                                 marginal_x="violin",
+                                 marginal_y="violin",
+                                 color_discrete_sequence=['indianred'],
+                                 hover_name="Stock")
+    
+    
+    # Trailing PE vs Forward PE
+    trl_pe_v_fwd_pe.update_yaxes(title_standoff =100,
+                                         ticks="inside",
+                                         tickfont={'size':8})   
+   
+
     trailing_pe_fig = px.histogram(sp500_summary_df, 
                        x='Trailing PE',
                        marginal="box",
                        nbins=60)
-    
+        
     trailing_pe_fig.update_yaxes(title_text=None)
+    trailing_pe_fig.update_xaxes(ticks="inside",                                
+                                 #tick0=0,
+                                 tickvals=[0, 10, 25, 50, 75, 100, 125, 200, 250]
+                                 #dtick=25
+                                 )
+    trailing_pe_fig.update_layout(xaxis_range=[0,175])
+    
     
     forward_pe_fig = px.histogram(sp500_summary_df, 
                        x='Forward PE',
@@ -204,12 +250,85 @@ def update_sp_dist_layout(n_intervals: int):
                        nbins=60)
     
     forward_pe_fig.update_yaxes(title_text=None)
+    forward_pe_fig.update_xaxes(ticks="inside",                                
+                                 #tick0=0,
+                                 tickvals=[0, 10, 25, 50, 75, 100, 125, 200, 250]
+                                 #dtick=25
+                                 )
+    forward_pe_fig.update_layout(xaxis_range=[0,175])
     
-    chart = html.Div([dcc.Graph(id='seven_day_chng_dist',figure=seven_day_chng_fig),
-                      dcc.Graph(id='thirty_day_chng_dist',figure=thirty_day_chng_fig),
-                      dcc.Graph(id='trailing_pe_dist',figure=trailing_pe_fig),
-                      dcc.Graph(id='forward_pe_dist',figure=forward_pe_fig),
-                      ])
+    seven_day_chng_dist_descr = 'Indicates S&P 500 percentage movement over the last seven days. Distribution type may indicate broad market moves vs sector moves.'
+    
+    seven_day_vs_thirty_day_descr = 'Scatter plot of seven day vs thirty day percentage change of individual stocks in the S&P 500. Visual detection of anomalies could help indicate stocks that have changed course in the last seven days.'
+    
+    thirty_day_chng_dist_descr = 'Indicates S&P 500 percentage movement over the last thirty days.'
+    
+    trl_v_fwd_pe_descr = 'Plots forward PE vs trailing PE for S&P 500 stocks, this can help indicate stocks with future upside on EPS.'
+    
+    chart = html.Div([
+        
+        #html.H3(['S&P 500 Distributions'])
+        
+        html.Div([
+
+            html.Div([
+                
+                dcc.Graph(id='seven_day_chng_dist',
+                          figure=seven_day_chng_fig),
+                html.P([seven_day_chng_dist_descr],
+                       style={'margin-left': '80px',
+                              'margin-top': '-5px'}),
+            ],
+                style={'width': '47%',
+                       'display': 'inline-block'}),
+
+            html.Div([
+                
+                dcc.Graph(id='seven_day_chng_dist_2',
+                          figure=seven_day_chng_v_thirty),
+                html.P([seven_day_vs_thirty_day_descr],
+                       style={'margin-left': '80px',
+                              'margin-top': '-5px'}),
+            ],
+                style={'width': '47%',
+                       'display': 'inline-block', }),
+
+        ]),
+
+        html.Div([
+
+            html.Div([
+                
+                dcc.Graph(id='thirty_day_chng_dist',
+                          figure=thirty_day_chng_fig),
+                html.P([thirty_day_chng_dist_descr],
+                       style={'margin-left': '80px',
+                              'margin-top': '-5px'}),
+            ],
+                style={'width': '47%',                       
+                       'display': 'inline-block'}),
+            
+            html.Div([
+                
+                dcc.Graph(id='trl_v_fwd_pe_dist',
+                          figure=trl_pe_v_fwd_pe),
+                html.P([trl_v_fwd_pe_descr ],
+                       style={'margin-left': '80px',
+                              'margin-top': '-5px'}),
+            ],
+                style={'width': '47%',
+                       'display': 'inline-block', }),
+
+        ]),
+        
+        
+        #dcc.Graph(id='thirty_day_chng_dist',figure=thirty_day_chng_fig),
+                      
+        dcc.Graph(id='trailing_pe_dist',figure=trailing_pe_fig),
+                      
+        dcc.Graph(id='forward_pe_dist',figure=forward_pe_fig),
+                      
+        ])
     
     return chart
                   
@@ -287,9 +406,9 @@ def update_sp_summary_tbl_layout(n_intervals: int):
         lst_cls = datao['data'][t]['historical']['Close']
         if not lst_cls.empty:
             #print(datao['data'][t]['info'])
-            trl_pe = 'N/A'
-            fwd_pe = 'N/A'
-            div_rt = 'N/A'
+            trl_pe = 0
+            fwd_pe = 0
+            div_rt = 0
 
             if 'trailingPE' in datao['data'][t]['info']:
                 trl_pe = datao['data'][t]['info']['trailingPE']
@@ -371,7 +490,7 @@ etf_analysis_layout = html.Div([
                     children=[html.Div(id="ls-etf-loading-output-1",
                                        style={'position': 'absolute', 'z-index': '-1'})],
                     type="default"),
-        html.H3(['Spyder Sector ETFs'], style={'color': 'whitesmoke'}),
+        html.H3(['Spyder Sector ETFs'], style={'color': 'gray'}),
         dcc.Interval(
             id="etf_load_interval",
             n_intervals=0,
@@ -383,7 +502,7 @@ etf_analysis_layout = html.Div([
                  ]),
     ],
         style={'padding': '20px',
-               'background': 'rgb(17, 17, 17)',
+               #'background': 'rgb(17, 17, 17)',
                'height': '1500px'})
 ])
 
@@ -402,7 +521,7 @@ def update_etf_layout(n_intervals: int):
         #datao['data'][s] = temp_dict
         #df_close = tickers.tickers[t].history(period="1y")
         df_close = etf_datao['data'][t]['historical']
-        fig_daily_close = px.line(df_close['Close'], template='plotly_dark')
+        fig_daily_close = px.line(df_close['Close'])
         fig_daily_close.update_layout(
             title=t,
             xaxis_title=None,
@@ -415,8 +534,7 @@ def update_etf_layout(n_intervals: int):
             etf_datao['data'][t]['info']['holdings'])
         df_holding = df_holding.rename(
             columns={'holdingPercent': 'Holding Percent', 'symbol': 'ETF Symbol'})
-        fig_etf_holdings = px.bar(df_holding, x='ETF Symbol', y='Holding Percent', text_auto=True,
-                                  template='plotly_dark')
+        fig_etf_holdings = px.bar(df_holding, x='ETF Symbol', y='Holding Percent', text_auto=True)
         fig_etf_holdings.update_layout(
             title='Top Holdings',
             xaxis_title=None,
