@@ -36,8 +36,8 @@ etf_fileo = open(rel_path, 'rb')
 etf_datao = pickle.load(etf_fileo)
 
 # get initial stock data
-initial_ticker_val = 'AAPL'
-a = yfinance.Ticker(initial_ticker_val)
+#initial_ticker_val = 'AAPL'
+#a = yfinance.Ticker(initial_ticker_val)
 
 sp500_distribution_layout = html.Div([
     

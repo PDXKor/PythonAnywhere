@@ -13,7 +13,10 @@ import time
 from datetime import datetime
 import os
 from pathlib import Path
-from pages import sp500_summary_table,sp500_distributions,etf_analysis,equity_search
+from pages import equity_search,sp500_distributions,etf_analysis,jupyter_analysis
+from pages import sp500_summary_table
+
+#from pages import sp500_summary_table,sp500_distributions,etf_analysis,equity_search#,jupyter_analysis
 
 ''' Features To Add:    
     Biggest losers per day and how are they doing now - utilize the python now batch job feature.
@@ -35,6 +38,7 @@ app = dash.Dash('Analytics Dash',
                 external_stylesheets=[dbc.themes.LUX],
                 suppress_callback_exceptions=True)
 
+#server = app.server
 
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
@@ -42,15 +46,33 @@ app.layout = html.Div([
 ])
 @app.callback(Output('page-content', 'children'),
               [Input('url', 'pathname')])
-def display_page(pathname):          
-    if pathname == '/etf_analysis':
-        return etf_analysis.etf_analysis_layout    
-    if pathname == '/sp500_analysis':
-        return sp500_summary_table.sp500_analysis_layout        
+def display_page(pathname):
+    print(pathname)
     if pathname == '/sp500_distributions':
-        return sp500_distributions.sp500_distribution_layout     
+             return sp500_distributions.sp500_distribution_layout
+    if pathname == '/etf_analysis':
+             return etf_analysis.etf_analysis_layout
+    if pathname == '/jupyter_analysis':
+            return jupyter_analysis.jupyter_layout  
+    if pathname == '/sp500_analysis':
+             return sp500_summary_table.sp500_analysis_layout
+    if pathname == '/index':
+            return equity_search.equity_search_layout        
     else:
-        return equity_search.equity_search_layout
+        return pathname
+
+
+# def display_page(pathname):          
+#     if pathname == '/etf_analysis':
+#         return etf_analysis.etf_analysis_layout 
+#    # if pathname == '/jupyter_analysis':
+#         #return jupyter_analysis.jupyter_layout    
+#     if pathname == '/sp500_analysis':
+#         return sp500_summary_table.sp500_analysis_layout        
+#     #if pathname == '/sp500_distributions':
+#         #return sp500_distributions.sp500_distribution_layout     
+#     else:
+#         return equity_search.equity_search_layout
 
 if __name__ == '__main__':
     app.run_server()

@@ -20,6 +20,7 @@ import time
 from datetime import datetime
 import os
 from pathlib import Path
+print('starting script')
 
 quick_ratio_text = "A measure of a company’s short-term liquidity. It measures a company’s ability to meet its short-term obligations. QR = (CE(Cash & Equivalents) + MS(Marketable Securities) + AR(Accounts Recievable)) / CL (Current Liabilities). A value of 1 indicates that a company can fully meet its short term obligations."
 
@@ -49,6 +50,7 @@ etf_datao = pickle.load(etf_fileo)
 
 # get initial stock data
 initial_ticker_val = 'AAPL'
+print('getting yahoo data')
 a = yfinance.Ticker(initial_ticker_val)
 
 equity_search_layout = html.Div(id='index-content', children=[
