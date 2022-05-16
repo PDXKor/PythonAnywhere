@@ -65,7 +65,8 @@ equity_search_layout = html.Div(id='index-content', children=[
                     dbc.DropdownMenuItem("SP500 Distributions", href="/sp500_distributions"),
                     dbc.DropdownMenuItem("SP500 Summary Table", href="/sp500_analysis"),
                     #dbc.DropdownMenuItem("Individual Equity Data", href="/index"),
-
+                    dbc.DropdownMenuItem("Jupyter Analysis", href="/jupyter_analysis"),
+                    dbc.DropdownMenuItem("Wine Ratings by Price", href="/wine_data"),
                 ],
                 nav=True,
                 in_navbar=True,

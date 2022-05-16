@@ -52,6 +52,8 @@ sp500_distribution_layout = html.Div([
                     #dbc.DropdownMenuItem("SP500 Distributions", href="/sp500_distributions"),
                     dbc.DropdownMenuItem("SP500 Summary Table", href="/sp500_analysis"),
                     dbc.DropdownMenuItem("Individual Equity Data", href="/index"),
+                    dbc.DropdownMenuItem("Jupyter Analysis", href="/jupyter_analysis"),
+                    dbc.DropdownMenuItem("Wine Ratings by Price", href="/wine_data"),
                 ],
                 nav=True,
                 in_navbar=True,
@@ -218,7 +220,7 @@ def update_sp_dist_layout(n_intervals: int):
     
     seven_day_chng_dist_descr = 'Indicates S&P 500 percentage movement over the last seven days. Distribution type may indicate broad market moves vs sector moves.'
     
-    seven_day_vs_thirty_day_descr = 'Scatter plot of seven day vs thirty day percentage change of individual stocks in the S&P 500. Visual detection of anomalies could help indicate stocks that have changed course in the last seven days.'
+    seven_day_vs_thirty_day_descr = 'Scatter plot of seven day vs thirty day percentage change of individual stocks in the S&P 500. Outliers could help indicate stocks that have changed course in the last seven days.'
     
     thirty_day_chng_dist_descr = 'Indicates S&P 500 percentage movement over the last thirty days.'
     

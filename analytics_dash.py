@@ -14,7 +14,7 @@ from datetime import datetime
 import os
 from pathlib import Path
 from pages import equity_search,sp500_distributions,etf_analysis,jupyter_analysis
-from pages import sp500_summary_table
+from pages import sp500_summary_table, wine_scrapper
 
 #from pages import sp500_summary_table,sp500_distributions,etf_analysis,equity_search#,jupyter_analysis
 
@@ -56,10 +56,12 @@ def display_page(pathname):
             return jupyter_analysis.jupyter_layout  
     if pathname == '/sp500_analysis':
              return sp500_summary_table.sp500_analysis_layout
+    if pathname == '/wine_data':
+             return wine_scrapper.wine_layout       
     if pathname == '/index':
             return equity_search.equity_search_layout        
     else:
-        return pathname
+        return equity_search.equity_search_layout
 
 
 # def display_page(pathname):          
@@ -75,4 +77,4 @@ def display_page(pathname):
 #         return equity_search.equity_search_layout
 
 if __name__ == '__main__':
-    app.run_server()
+    app.run_server(debug=True)
